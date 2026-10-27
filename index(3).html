@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <meta name="theme-color" content="#080a0d" />
+  <meta name="description" content="House of Echoes — a first-person stealth horror escape game built with Three.js." />
+  <title>House of Echoes — A 3D Stealth Horror Game</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/"}}
+  </script>
+</head>
+<body>
+<div id="game-root">
+  <canvas id="game-canvas" aria-label="House of Echoes game viewport"></canvas>
+  <div id="screen-fx"></div><div id="film-grain"></div>
+  <div id="hud">
+    <div class="hud-top">
+      <div class="brand-chip"><div class="brand-mark">H</div><div class="brand-text"><b>HOUSE OF ECHOES</b><span>FIELD RECORD · 01:47 AM</span></div></div>
+      <div class="objective-panel">
+        <div class="panel-kicker">YOUR WAY OUT</div>
+        <div id="objective-key" class="objective-line"><span class="check">✓</span> Find the brass exit key</div>
+        <div id="objective-cutters" class="objective-line"><span class="check">✓</span> Find bolt cutters for the chains</div>
+        <div class="objective-line"><span class="check">·</span> Unlock the front door and escape</div>
+      </div>
+      <div id="map-panel"><div id="map-title"><span>HOUSE PLAN</span><span>LIVE</span></div><canvas id="map-canvas" width="240" height="205" aria-label="Live minimap"></canvas></div>
+    </div>
+    <div id="crosshair"></div>
+    <div id="interaction-prompt"></div>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <div id="hidden-overlay"><div class="hidden-copy"><strong>Stay Quiet.</strong>Press E to leave the hiding place</div></div>
+    <div class="bottom-left">
+      <div class="status-row"><span>Stamina</span><strong id="stamina-value">100%</strong></div>
+      <div class="bar-track"><div id="stamina-bar"></div></div>
+      <div class="status-row"><span>Attempts remaining</span><strong id="attempts-value">05</strong></div>
+      <div id="night-label">MOVE SOFTLY. LISTEN CAREFULLY.</div>
+    </div>
+    <div class="bottom-right">
+      <div class="inventory-card">
+        <div id="slot-key" class="item-slot" title="Brass key"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="7.2" cy="8" r="4.2"/><path d="M10.3 11.1 21 21m-4-4 2-2m-5-1 2-2"/></svg><small>KEY</small></div>
+        <div id="slot-cutters" class="item-slot" title="Bolt cutters"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20 11 8m9 12L13 8M6 4l6 4 6-4M11 8l-1-4m3 4 1-4"/><circle cx="4" cy="20" r="1.2"/><circle cx="20" cy="20" r="1.2"/></svg><small>CUTTERS</small></div>
+      </div>
+      <div class="controls-hint"><span class="keycap">W</span><span class="keycap">A</span><span class="keycap">S</span><span class="keycap">D</span> MOVE<br><span class="keycap">SHIFT</span> SPRINT · <span class="keycap">C</span> CROUCH<br><span class="keycap">E</span> INTERACT · <span class="keycap">F</span> LIGHT</div>
+    </div>
+  </div>
+  <div id="touch-controls">
+    <div id="stick-pad"><div id="stick-knob"></div></div>
+    <div class="touch-actions"><button id="touch-interact" class="touch-btn">Use / Hide</button><button id="touch-run" class="touch-btn">Run</button><button id="touch-crouch" class="touch-btn">Crouch</button><button id="touch-light" class="touch-btn">Light</button></div>
+  </div>
+  <div id="overlay-stack">
+    <div id="start-screen" class="screen-card">
+      <div class="eyebrow">A FIRST-PERSON STEALTH HORROR</div>
+      <h1>House of <em>Echoes.</em></h1>
+      <p class="intro-copy">You woke up in a house that should have been empty. The front door is chained and locked. Someone is moving in the rooms beyond the hall. Find what you need, keep quiet, and get out before it finds you.</p>
+      <div class="rule"><b>THE EXIT</b><span>Find the brass key in the bedroom and the bolt cutters in the storage room. Both are needed to open the front door.</span></div>
+      <div class="rule"><b>STAY ALIVE</b><span>Running carries farther. Crouch to move quietly, break line of sight, and use wardrobes when you need to disappear.</span></div>
+      <div class="btn-row"><button id="start-btn" class="primary-btn">Enter the house&nbsp; ↗</button><button id="controls-btn" class="secondary-btn">Controls</button></div>
+      <div class="footnote">HEADPHONES RECOMMENDED · DESKTOP: MOUSE + KEYBOARD · MOBILE: TOUCH CONTROLS<br>AN ORIGINAL FAN-STYLE HORROR PROTOTYPE · NOT AFFILIATED WITH ANY EXISTING GAME</div>
+    </div>
+    <div id="pause-screen" class="screen-card compact" hidden>
+      <div class="eyebrow">TAKE A BREATH</div><h2>Paused.</h2><p>The house is still here. Your footsteps will be, too.</p><div class="btn-row"><button id="resume-btn" class="primary-btn">Resume</button><button id="restart-btn" class="secondary-btn">Restart run</button></div>
+    </div>
+    <div id="caught-screen" class="screen-card compact" hidden>
+      <div class="eyebrow">SOMETHING HEARD YOU</div><h2 id="caught-title">You were found.</h2><p id="caught-copy">You have another chance. Keep to the shadows, and watch the hall.</p><div class="btn-row"><button id="caught-retry-btn" class="primary-btn">Try again</button><button id="caught-restart-btn" class="secondary-btn">Start over</button></div>
+    </div>
+    <div id="win-screen" class="screen-card compact" hidden>
+      <div class="eyebrow">YOU MADE IT OUT</div><h2>Keep running.</h2><p>You slipped through the front door and into the dark. Whatever was inside can stay inside.</p><div class="btn-row"><button id="win-restart-btn" class="primary-btn">Play again</button></div>
+    </div>
+    <div id="error-screen" class="screen-card compact" hidden>
+      <div class="eyebrow">INITIALIZATION FAILED</div><h2>Could not load.</h2><p id="error-copy">The 3D engine could not start. Check your internet connection and open the game through a local web server.</p><div class="btn-row"><button id="error-reload-btn" class="primary-btn">Try again</button></div><div class="footnote">This game loads Three.js and its CC0 character model from online sources.</div>
+    </div>
+    <div id="controls-screen" class="screen-card compact" hidden>
+      <div class="eyebrow">SURVIVAL NOTES</div><h2>Controls.</h2><p><b>W A S D</b> — move &nbsp; · &nbsp; <b>Mouse</b> — look around<br><b>Shift</b> — sprint (uses stamina) &nbsp; · &nbsp; <b>C</b> — crouch<br><b>E</b> — interact / collect / hide &nbsp; · &nbsp; <b>F</b> — toggle flashlight<br><b>Esc</b> — pause. On touch devices, drag to look and use the on-screen controls.</p><div class="btn-row"><button id="controls-back-btn" class="primary-btn">Back</button></div></div>
+  </div>
+  <div id="loading-screen"><div class="loader-inner"><div class="loader-ring"></div><div>Preparing the house</div></div></div>
+</div>
+<script type="module" src="./game.js"></script>
+</body>
+</html>
